@@ -3,6 +3,8 @@ const koaRouter = require('koa-router')
 const mongoose = require('mongoose')
 const colors = require('colors')
 const bodyParser = require('koa-bodyparser')
+const passport = require('koa-passport')
+
 const app = new koa()
 
 const db = require('./config/keys').mongoURL
@@ -15,11 +17,19 @@ const user = require('./routes/api/user')
 
 // 连接数据库
 mongoose.connect(db,
-{ useNewUrlParser: true }).then(() => {
+{ useNewUrlParser: true,
+  useUnifiedTopology: true }).then(() => {
   console.log('mongoose connected ...'.red.bold)
 }).catch(err => {
   console.log(err)
 })
+
+// passport初始化
+app.use(passport.initialize())
+app.use(passport.session())
+
+// 回调到config文件中 passport.js
+require('./config/passport')(passport);
 
 //创建路由
 const router = new koaRouter()
