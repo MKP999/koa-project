@@ -18,8 +18,12 @@ const profile = require('./routes/api/profile')
 
 // 连接数据库
 mongoose.connect(db,
-{ useNewUrlParser: true,
-  useUnifiedTopology: true }).then(() => {
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+    useFindAndModify: false,
+    }).then(() => {
   console.log('mongoose connected ...'.red.bold)
 }).catch(err => {
   console.log(err)

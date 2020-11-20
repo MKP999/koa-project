@@ -93,10 +93,8 @@ router.post('/login', async ctx => {
   if (checkPasswork) {
     // 返回token
     const secret = require('../../config/keys').secretKey
-    const payload = {id: user.id, name: user.name, avatar: user.name}
-    const token = jwt.sign({
-      data: payload
-    }, secret, { expiresIn: 3600 })
+    const payload = {id: user.id, name: user.name, avatar: user.avatar}
+    const token = jwt.sign(payload, secret, { expiresIn: 3600 })
 
     ctx.state = 200
     ctx.body = { success: true, token: 'Bearer ' + token }
