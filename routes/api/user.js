@@ -80,19 +80,20 @@ router.post('/login', async ctx => {
     ctx.body = errors
     return
   }
-  const user = await User.find({email})
+  const findResult = await User.find({email})
+  const user = findResult[0];
   // 搜索不到
   if(user.length === 0) {
-    ctx.state = 400
+    ctx.state = 404
     ctx.body = { msg: '用户名不存在'}
     return
   }
   
-  const checkPasswork = await bcrypt.compareSync(password, user[0].password)
+  const checkPasswork = await bcrypt.compareSync(password, user.password)
   console.log(checkPasswork)
   if (checkPasswork) {
     // 返回token
-    const secret = require('../../config/keys').secretKey
+    const secret = require('../../config/keys').secretOrKey
     const payload = {id: user.id, name: user.name, avatar: user.avatar}
     const token = jwt.sign(payload, secret, { expiresIn: 3600 })
 

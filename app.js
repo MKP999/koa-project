@@ -15,6 +15,7 @@ app.use(bodyParser())
 // 引入路由文件
 const user = require('./routes/api/user')
 const profile = require('./routes/api/profile')
+const post = require('./routes/api/post')
 
 // 连接数据库
 mongoose.connect(db,
@@ -42,6 +43,7 @@ const router = new koaRouter()
 // 配置user路由 挂载路由节点
 router.use('/api/users', user)
 router.use('/api/profile', profile)
+router.use('/api/posts', post)
 
 
 // 配置路由
