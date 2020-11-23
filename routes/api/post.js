@@ -5,6 +5,7 @@ const passport = require('koa-passport')
 const Post = require('../../models/Post')
 const Profile = require('../../models/Profile')
 const validatePostInput = require('../../validation/post')
+const post = require('../../validation/post')
 
 
 /**
@@ -50,18 +51,6 @@ router.post('/', passport.authenticate('jwt', { session: false }), async ctx => 
   ctx.body = newPost
 })
 
-
-/**
- * @route GET api/posts/all
- * @desc  获取所有留言接口地址
- * @access 接口是公开的
- */
-router.get('/all', async ctx => {
-  const posts = await Post.find()
-
-  ctx.status = 200
-  ctx.body = posts
-})
 
 /**
  * @route GET api/posts/all
@@ -131,7 +120,7 @@ router.delete('/', passport.authenticate('jwt', { session: false }), async ctx =
 
 /**
  * @route POST api/posts/like?id=123
- * @desc  点赞接口地址接口地址
+ * @desc  点赞/取消点赞接口地址接口地址
  * @access 接口是私有的
  */
 router.post('/like', passport.authenticate('jwt', { session: false }), async ctx => {
@@ -182,6 +171,95 @@ router.post('/like', passport.authenticate('jwt', { session: false }), async ctx
     ctx.body = { msg: '未找到该个人信息' }
   } 
 
+})
+
+
+/**
+ * @route POST api/posts/comment?id=123
+ * @desc  创建评论接口地址接口地址
+ * @access 接口是私有的
+ */
+router.post('/comment', passport.authenticate('jwt', { session: false }), async ctx => {
+  const id = ctx.query.id
+
+  const profile = await Profile.find({user: ctx.state.user.id})
+  if (profile.length > 0) {
+    // 查找留言
+    const post = await Post.findById(id)
+    // 评论内容
+    const newComment = {
+      text: ctx.request.body.text,
+      name: ctx.request.body.name,
+      avatar: ctx.request.body.avatar,
+      user: ctx.state.user.id,
+    }
+    post.comments.unshift(newComment)
+    // 更新评论 存储
+    const postUpdate = await Post.findOneAndUpdate(
+      {_id: id},
+      {$set: post},
+      {new: true}
+    )
+
+    ctx.state = 200
+    ctx.body = postUpdate
+  } else {
+    // 未找到
+    ctx.status = 404
+    ctx.body = { msg: '未找到该个人信息' }
+  }
+})
+
+
+/**
+ * @route DELETE api/posts/comment?post_id=123&com_id=123
+ * @desc  删除评论接口地址接口地址
+ * @access 接口是私有的
+ */
+router.delete('/comment', passport.authenticate('jwt', { session: false }), async ctx => {
+  const post_id = ctx.query.post_id
+  const com_id = ctx.query.com_id
+
+  const profile = await Profile.find({user: ctx.state.user.id})
+  if (profile.length > 0) {
+    // 有留言信息
+    // 获取该留言信息
+    const post = await Post.findById(post_id)
+    if (post.comments.length > 0) {
+      // 该留言信息具有评论信息
+      // 判断是否本人操作 否则非法操作
+      // post.comments.forEach(comment => {
+      //   if (comment._id.toString() === com._id.toString()) {
+      //     if (comment.user.toString() !== ctx.state.user.id) {
+      //       ctx.status = 401
+      //       ctx.body = { msg: '非法操作'}
+      //     }
+      //   }
+      // })
+
+      // 查找需要删除评论的下标
+      const removeIndex = post.comments.map(item => item._id.toString()).indexOf(com_id)
+      
+      // 删除该评论
+      post.comments.splice(removeIndex, 1)
+      // 更新数据 存储
+      const postUpdate = await Post.findOneAndUpdate(
+        {_id: post_id},
+        {$set: post},
+        {new: true}
+      )
+      ctx.status = 200
+      ctx.body = postUpdate
+
+    } else {
+      ctx.status = 404
+      ctx.body = { msg: '没有评论信息' }
+    }
+  } else {
+    // 未找到
+    ctx.status = 404
+    ctx.body = { msg: '未找到该个人信息' }
+  }
 })
 
 module.exports = router.routes()
